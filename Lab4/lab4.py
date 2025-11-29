@@ -4,7 +4,7 @@ import random
 from collections import defaultdict
 
 PHILOSOPHER_COUNT = 5 
-SIMULATION_TIME = 20.0 
+SIMULATION_TIME = 5.0 
 THINK_TIME_RANGE = (0.5, 2.0) 
 EAT_TIME_RANGE   = (0.5, 1.5) 
 
@@ -36,7 +36,7 @@ def philosopher_thread(phil_id: int, forks: list[threading.Lock], n: int):
         log_state(phil_id, STATE_THINKING)
         think_time = random.uniform(*THINK_TIME_RANGE)
         time.sleep(think_time)
-        #2) Философ проголодался и пытается взять вилки. сначала вилку с меньшим номером, затем с большим.
+        #2) Философ пытается взять вилки. сначала вилку с меньшим номером, затем с большим.
         first_id = min(left_id, right_id)
         second_id = max(left_id, right_id)
         first_is_left = (first_id == left_id)
@@ -112,4 +112,3 @@ def main():
     print_summary(n, total_duration)
 if __name__ == "__main__":
     main()
-
