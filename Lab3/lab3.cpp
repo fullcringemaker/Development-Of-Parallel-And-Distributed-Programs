@@ -50,15 +50,17 @@ int main(int argc, char* argv[]) {
             omp_set_num_threads(user_threads);
         }
     }
-
     int used_threads = 1;
 #pragma omp parallel
     {
 #pragma omp single
         used_threads = omp_get_num_threads();
     }
-
-    std::vector<double> x(N, 0.0);
+    const double PI = 3.14159265358979323846;
+    std::vector<double> x(N);
+    for (int i = 0; i < N; ++i) {
+        x[i] = std::sin(4.0 * PI * static_cast<double>(i) / static_cast<double>(N));
+    }
     std::vector<double> b(N, 0.0);
     std::vector<double> r(N, 0.0);
     std::vector<double> z(N, 0.0);
@@ -71,7 +73,6 @@ int main(int argc, char* argv[]) {
         }
     }
     else if (variant == 2) {
-        const double PI = 3.14159265358979323846;
         std::vector<double> u(N, 0.0);
         for (int i = 0; i < N; ++i) {
             u[i] = std::sin(2.0 * PI * static_cast<double>(i) / static_cast<double>(N));
@@ -80,13 +81,11 @@ int main(int argc, char* argv[]) {
     }
     double t0 = omp_get_wtime();
     matvec_naive(x, Ax);
-
 #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
         r[i] = b[i] - Ax[i];
-        z[i] = r[i];
+        z[i] = r[i];         
     }
-
     double bnorm = norm2(b);
     if (bnorm == 0.0) {
         bnorm = 1.0;
@@ -95,38 +94,34 @@ int main(int argc, char* argv[]) {
     int    iters = 0;
     while (rel > EPS && iters < MAX_ITERS) {
         matvec_naive(z, Az);
-        double rr = dot_product(r, r);
-        double denom = dot_product(Az, z);
+        double rr = dot_product(r, r);   
+        double denom = dot_product(Az, z);  
         if (denom == 0.0) {
             break;
         }
-        double alpha = rr / denom;
-
+        double alpha = rr / denom;          
 #pragma omp parallel for
         for (int i = 0; i < N; ++i) {
-            x[i] += alpha * z[i];
-            r_new[i] = r[i] - alpha * Az[i];
+            x[i] += alpha * z[i];       
+            r_new[i] = r[i] - alpha * Az[i]; 
         }
-
-        double rr_new = dot_product(r_new, r_new);
-        double beta = rr_new / rr;
-
+        double rr_new = dot_product(r_new, r_new); 
+        double beta = rr_new / rr;               
 #pragma omp parallel for
         for (int i = 0; i < N; ++i) {
-            z[i] = r_new[i] + beta * z[i];
-            r[i] = r_new[i];
+            z[i] = r_new[i] + beta * z[i]; 
+            r[i] = r_new[i];               
         }
         ++iters;
-        rel = std::sqrt(rr_new) / bnorm;
+        rel = std::sqrt(rr_new) / bnorm;   
     }
     double t1 = omp_get_wtime();
     std::cout << "variant = " << variant << "\n";
     std::cout << "threads = " << used_threads << "\n";
     std::cout << "iterations = " << iters << "\n";
-    std::cout << "relative_residual = " << std::fixed;
     std::cout.setf(std::ios::fixed);
     std::cout.precision(10);
-    std::cout << rel << "\n";
+    std::cout << "relative_residual = " << rel << "\n";
     std::cout.setf(std::ios::fmtflags(0), std::ios::floatfield);
     std::cout << "time_sec = " << (t1 - t0) << "\n";
     return 0;
