@@ -10,7 +10,7 @@ lock = Lock()
 
 A = [[random.randint(0, 9) for _ in range(n)] for _ in range(n)]
 B = [[random.randint(0, 9) for _ in range(n)] for _ in range(n)]
-"""s
+"""
 def print_matrix(matrix, name, size_to_print=15):
     print(f"\nМатрица {name} (первые {size_to_print}x{size_to_print} элементов):")
     for i in range(min(size_to_print, len(matrix))):
