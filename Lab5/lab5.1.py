@@ -3,8 +3,8 @@ import time
 import threading
 import numpy as np
 
-GRID_ROWS = 2000
-GRID_COLS = 2000
+GRID_ROWS = 1500
+GRID_COLS = 1500
 SEED = 0
 
 def step_single(src, dst):
@@ -15,7 +15,7 @@ def step_single(src, dst):
         np.roll(src, 1, axis=1) + np.roll(src, -1, axis=1) +
         np.roll(down, 1, axis=1) + down + np.roll(down, -1, axis=1)
     )
-    alive = src == 1
+    alive = (src == 1)
     dst[:] = ((alive & ((n == 2) | (n == 3))) | ((~alive) & (n == 3))).astype(np.uint8)
 
 def run_single(initial, steps):
@@ -31,12 +31,10 @@ def run_single(initial, steps):
 def run_threads(initial, steps, n_threads):
     a = initial.copy()
     b = np.empty_like(a)
-
     starts = [i * GRID_ROWS // n_threads for i in range(n_threads)]
     ends = [(i + 1) * GRID_ROWS // n_threads for i in range(n_threads)]
     top_rows = np.empty((n_threads, GRID_COLS), dtype=np.uint8)
     bottom_rows = np.empty((n_threads, GRID_COLS), dtype=np.uint8)
-
     barrier_pub = threading.Barrier(n_threads) 
     barrier_done = threading.Barrier(n_threads) 
     barrier_copy = threading.Barrier(n_threads)
@@ -49,7 +47,6 @@ def run_threads(initial, steps, n_threads):
         block = a[s:e]
         prev_rows = np.empty_like(block)
         next_rows = np.empty_like(block)
-
         for _ in range(steps):
             top_rows[tid] = a[s]
             bottom_rows[tid] = a[e - 1]
@@ -65,7 +62,6 @@ def run_threads(initial, steps, n_threads):
                 np.roll(block, 1, axis=1) + np.roll(block, -1, axis=1) +
                 np.roll(next_rows, 1, axis=1) + next_rows + np.roll(next_rows, -1, axis=1)
             )
-
             alive = (block == 1)
             b[s:e] = ((alive & ((n == 2) | (n == 3))) | ((~alive) & (n == 3))).astype(np.uint8)
             barrier_done.wait()
@@ -85,16 +81,12 @@ def run_threads(initial, steps, n_threads):
 def main():
     steps = int(sys.argv[1])
     n_threads = int(sys.argv[2])
-
     rng = np.random.default_rng(SEED)
     initial = (rng.random((GRID_ROWS, GRID_COLS)) < 0.5).astype(np.uint8)
-
     print(f"grid={GRID_ROWS}x{GRID_COLS} steps={steps} threads={n_threads} seed={SEED}")
     print(f"initial_alive={int(initial.sum())}")
-
     final_single, avg_single = run_single(initial, steps)
     final_threads, avg_threads = run_threads(initial, steps, n_threads)
-
     mismatch = int(np.count_nonzero(final_single != final_threads))
     alive_single = int(final_single.sum())
     alive_threads = int(final_threads.sum())
