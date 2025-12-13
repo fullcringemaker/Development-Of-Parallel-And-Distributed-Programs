@@ -1,5 +1,6 @@
 import threading
 import random
+import sys
 
 class ReadWriteLock:
     def __init__(self):
@@ -63,33 +64,26 @@ class LinkedList:
 def worker(thread_id, count, linked_list, rw_lock):
     for _ in range(count):
         value = random.randint(0, 1000)
-
         rw_lock.acquire_read()
         exists = linked_list.contains(value)
         rw_lock.release_read()
-
         if exists:
             continue
-
         rw_lock.acquire_write()
-
         if not linked_list.contains(value):
             linked_list.append(value)
             print(f"[Thread {thread_id}] added value {value}")
-
         rw_lock.release_write()
 
 def main():
-    THREADS_COUNT = 8
-    NUMBERS_PER_THREAD = 200
-
+    NUMBERS_PER_THREAD = int(sys.argv[1])
+    THREADS_COUNT = int(sys.argv[2])
     linked_list = LinkedList()
     rw_lock = ReadWriteLock()
-
     threads = []
-
-    print("Starting threads...\n")
-
+    print("Starting threads...")
+    print(f"Threads count: {THREADS_COUNT}")
+    print(f"Numbers per thread: {NUMBERS_PER_THREAD}\n")
     for i in range(THREADS_COUNT):
         t = threading.Thread(
             target=worker,
@@ -97,26 +91,19 @@ def main():
         )
         threads.append(t)
         t.start()
-
     for t in threads:
         t.join()
-
     print("\nAll threads finished.\n")
-
     values = linked_list.to_list()
     unique_values = set(values)
-
     print(f"Total values in list: {len(values)}")
     print(f"Unique values:        {len(unique_values)}")
-
     if len(values) == len(unique_values):
-        print("SUCCESS: No duplicate values found.")
+        print("No duplicate values found.")
     else:
-        print("ERROR: Duplicates detected!")
-
-    print("\nFinal list content:")
+        print("Duplicates detected!")
+    print("\nFinal list:")
     print(sorted(values))
-    print(len(values))
 
 if __name__ == "__main__":
     main()
